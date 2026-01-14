@@ -2,12 +2,14 @@ from llm_ir import AIMessage, AIChunkImageURL
 from llm_ir.adapter import OpenAIMessage
 import requests
 import base64
+
 from .openai import LLMNodeOpenai
 
-class LLMNodeOllama(LLMNodeOpenai):
+class LLMNodeGemini(LLMNodeOpenai):
 
-    def __init__(self, model: str, api_key: str, base_url: str ="http://localhost:11434/v1") -> None:
+    def __init__(self, model: str, api_key: str, base_url: str ="https://generativelanguage.googleapis.com/v1beta/openai/") -> None:
         super().__init__(model, api_key, base_url)
+
 
     def format_messages(self, messages: list[AIMessage]) -> list[OpenAIMessage]:
 
