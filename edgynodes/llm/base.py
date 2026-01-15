@@ -1,7 +1,13 @@
-from edgygraph import GraphNode
+from edgygraph import GraphNode, GraphState
+from llm_ir import AIMessage
 from pydantic import BaseModel
 from typing import TypeVar, Generic
-from .states import LLMGraphState
+
+
+S = TypeVar('S', bound=object, default=object, covariant=True)
+
+class LLMGraphState(GraphState[S], Generic[S]):
+    messages: list[AIMessage] = []
 
 
 class Supports(BaseModel):
