@@ -30,13 +30,9 @@ class LLMOllamaNode[T: StateProtocol = StateProtocol, S: SharedProtocol = Shared
         chat = OllamaAdapter.chat(state.llm.messages)
         tools = OllamaAdapter.tools(state.llm.tools)
 
-        print(chat)
-
         for message in chat:
             if message.images:
                 await self.download_remote_image_urls(message.images)
-
-        print(chat)
         
         response = await AsyncClient().chat( # type: ignore
             model=self.model,

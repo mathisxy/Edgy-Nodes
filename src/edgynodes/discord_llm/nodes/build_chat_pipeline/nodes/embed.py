@@ -1,8 +1,10 @@
 import discord
 import edgygraph
 from llmir import AIChunkText, AIChunkImageURL, AIChunks
+from llmir.messages import AIMessage
+from llmir.roles import AIRoles
 
-from ...core.states import StateProtocol, SharedProtocol
+from ..core.states import StateProtocol, SharedProtocol
 
 class BuildDiscordEmbedNode[T: StateProtocol = StateProtocol, S: SharedProtocol = SharedProtocol](edgygraph.Node[T, S]):
     """Build a text chunk from the embed of a message."""
@@ -12,15 +14,23 @@ class BuildDiscordEmbedNode[T: StateProtocol = StateProtocol, S: SharedProtocol 
     async def __call__(self, state: T, shared: S) -> None:
 
         async with shared.lock:
-            message: discord.Message | None = shared.discord.messages[0] if shared.discord.messages else None
+            message = shared.discord_message
+            bot = shared.discord_bot
 
-            if not message:
-                raise ValueError("No messages in state to build embed chunk from.")
-            if not state.llm.new_messages:
-                raise ValueError("No AI messages in state to add embed chunk to.")
-            
-            for embed in message.embeds:
-                state.llm.new_messages[-1].chunks.extend(self.format_embed(embed))
+        ai_chunks: list[AIChunks] = []
+        role = AIRoles.MODEL if message.author == bot.user else AIRoles.USER
+
+        for embed in message.embeds:
+            ai_chunks.extend(self.format_embed(embed))
+
+        if ai_chunks:
+            if not state.ai_messages or not isinstance(state.ai_messages[-1], AIMessage):
+                state.ai_messages.append(AIMessage(
+                    chunks=ai_chunks,
+                    role=role, # TODO integrate AIRoles into AIMessage
+                ))
+            else:
+                state.ai_messages[-1].chunks.extend(ai_chunks)
                 
 
     def format_embed(self, embed: discord.Embed) -> list[AIChunks]:

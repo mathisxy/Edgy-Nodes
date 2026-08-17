@@ -36,12 +36,13 @@ class RespondNode(Node[StateProtocol, SharedProtocol]):
     filter: Callable[[AIMessages, AIChunks], bool]
 
 
-    def __init__(self, filter: Callable[[AIMessages, AIChunks], bool] | None = None, send_tool_responses: Literal[True, False, "only_media"] = "only_media", stream_text_edit_interval: float = 1.0) -> None:
+    def __init__(self, filter: Callable[[AIMessages, AIChunks], bool] | None = None, send_tool_responses: Literal[True, False, "only_media"] = "only_media", stream_text_edit_interval: float = 1.0, send_last_error: bool = True) -> None: # TODO filter with return
         super().__init__()
 
         self.send_tool_responses = send_tool_responses
         self.stream_text_edit_interval = stream_text_edit_interval
         self.filter = filter if filter is not None else lambda _, __: True
+        self.send_last_error = send_last_error
 
     
     async def __call__(self, state: StateProtocol, shared: SharedProtocol) -> None:
@@ -91,6 +92,10 @@ class RespondNode(Node[StateProtocol, SharedProtocol]):
             async with shared.lock:
 
                 shared.llm.stream = None
+
+        if self.send_last_error and shared.errors:
+            last_error = shared.errors[-1]
+            await channel.send(f"An error occurred during processing: {last_error.exceptions}")
 
 
 
